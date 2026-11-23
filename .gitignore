@@ -1,0 +1,4 @@
+.DS_Store
+*_quick.mat
+*_log_quick.txt
+experiments/*/figures/
