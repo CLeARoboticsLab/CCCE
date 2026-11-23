@@ -147,16 +147,22 @@ function run_mc(; ns = 3:8, n_trials = 100, full_nmax = 5, seed = SEED)
 end
 
 function summarize(rows)
-    @printf("\n%2s | %5s %6s | %10s %10s %10s %10s\n", "n", "valid", "failed",
-            "Restricted", "RR_F", "RR_X", "Full")
-    for n in sort(unique(r.n for r in rows))
-        sub = filter(r -> r.n == n, rows)
-        ok  = filter(r -> r.status_red in GOOD && r.status_rrf in GOOD && r.status_rrx in GOOD, sub)
-        med(f) = isempty(ok) || all(isnan, f.(ok)) ? NaN : median(filter(!isnan, f.(ok)))
-        @printf("%2d | %5d %6d | %10.3g %10.3g %10.3g %10.3g\n", n, length(ok), length(sub) - length(ok),
-                med(r -> r.t_red), med(r -> r.t_rrf), med(r -> r.t_rrx), med(r -> r.t_full))
+    valid(r) = r.status_red in GOOD && r.status_rrf in GOOD && r.status_rrx in GOOD
+    ns = sort(unique(r.n for r in rows))
+    for (title, keys) in (("total time [s]",              (:t_red,  :t_rrf,  :t_rrx,  :t_full)),
+                          ("average cost C_avg (Fig. 3)", (:AC_red, :AC_rrf, :AC_rrx, :AC_full)),
+                          ("Gini index G (Fig. 3)",       (:GI_red, :GI_rrf, :GI_rrx, :GI_full)))
+        println("\nMedian $title over valid instances")
+        @printf("%2s | %5s %6s | %10s %10s %10s %10s\n", "n", "valid", "failed",
+                "Restricted", "RR_F", "RR_X", "Full")
+        for n in ns
+            sub = filter(r -> r.n == n, rows)
+            ok  = filter(valid, sub)
+            med(k) = (v = filter(!isnan, [getfield(r, k) for r in ok]); isempty(v) ? NaN : median(v))
+            @printf("%2d | %5d %6d | %10.4g %10.4g %10.4g %10.4g\n", n, length(ok), length(sub) - length(ok),
+                    med.(keys)...)
+        end
     end
-    println("(median total time [s] over valid instances)")
 end
 
 function write_mat(rows, outfile; ns, n_trials, full_nmax)
