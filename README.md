@@ -15,8 +15,8 @@ only to redraw the figures.
 
 ```bash
 # 1. Get the code
-git clone -b public git@github.com:iamjaehan/ChanceConstrainedCE.git
-cd ChanceConstrainedCE
+git clone https://github.com/CLeARoboticsLab/CCCE.git
+cd CCCE
 
 # 2. Install the pinned dependencies (first time only, ~5-10 min including precompilation)
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
