@@ -8,23 +8,61 @@ and data needed to reproduce the experiments of two papers:
 | `experiments/ccce_infogain/` | CC-CE with information-gain–guided uncertainty reduction | α sweep (NaiveCE vs. CC-CE), InfoGain strategy comparison |
 | `experiments/scalability/` | *Scaling Chance-Constrained Correlated Equilibrium Computation for Exclusive Resource-Assignment Games* | Fig. 2 (computation time), Fig. 3 (average cost and Gini index) |
 
-## Installation
+## Quick start
 
-Requires Julia ≥ 1.10 (tested with 1.12.6).
+You need **Julia ≥ 1.10** ([install with juliaup](https://julialang.org/downloads/)). MATLAB is needed
+only to redraw the figures.
 
 ```bash
-git clone <this repository>
+# 1. Get the code
+git clone -b public git@github.com:iamjaehan/ChanceConstrainedCE.git
 cd ChanceConstrainedCE
+
+# 2. Install the pinned dependencies (first time only, ~5-10 min including precompilation)
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
-julia --project=. -e 'using Pkg; Pkg.test()'        # ~1 min
+
+# 3. Check that everything works (~1 min)
+julia --project=. -e 'using Pkg; Pkg.test()'
+
+# 4. Smoke-test each experiment (a few minutes in total)
+julia --project=. experiments/scalability/run_mc.jl --quick
+julia --project=. experiments/scalability/run_compact.jl --quick
+julia --project=. experiments/ccce_infogain/exp1_alpha.jl --quick
+julia --project=. experiments/ccce_infogain/exp2_infogain.jl --quick
 ```
+
+Run every command from the repository root. Each script prints a summary and writes a `.mat`
+file to its `results/` folder. `--quick` runs write `*_quick.mat` and never overwrite the paper data.
+
+### Running times
+
+Measured on an Apple M4 Pro (12 cores, 24 GB). Times will differ on other machines.
+
+| Command | `--quick` | Paper setting |
+|---|---|---|
+| `experiments/scalability/run_mc.jl` | ~30 s | ~1 h (dominated by Full-CCCE at n = 5 and RR_X at n = 8) |
+| `experiments/scalability/run_compact.jl` | ~15 s | ~2 min |
+| `experiments/ccce_infogain/exp1_alpha.jl` | ~3 min | several hours (700 PATH solves, ~20 s each) |
+| `experiments/ccce_infogain/exp2_infogain.jl` | ~7 min | ~3 h (200 PATH solves plus noise rollouts) |
+
+The CC-CE / InfoGain experiments are slow because every PATH solve rebuilds and compiles the
+symbolic MCP. This affects only wall-clock time, not results. The data behind the published figures
+is already in `results/`, so you can redraw every figure without rerunning anything (see below).
+
+### Redrawing the figures (MATLAB)
+
+```bash
+cd experiments/scalability/plot  && matlab -batch PlotScalability     # -> experiments/scalability/figures/
+cd experiments/ccce_infogain/plot && matlab -batch PlotCCCEInfoGain   # -> experiments/ccce_infogain/figures/
+```
+
+By default the plot scripts read the paper data in `results/`. To plot your own run, rerun the
+experiment without `--quick` (this overwrites `results/`), or change the data path at the top of the
+plot script.
 
 Key package versions are pinned in `Project.toml` (`[compat]`) to the versions used for the papers:
 JuMP 1.29.4, Ipopt.jl 1.14.0 (Ipopt 3.14.19), PATHSolver.jl 1.7.9, ParametricMCPs.jl 0.1.17,
 Symbolics.jl 6.58.0. PATH is used under its free courtesy license, which is set in `src/ChanceConstrainedCE.jl`.
-
-Plotting scripts are MATLAB (tested with R2026a). The experiment scripts themselves only need Julia,
-and they print the summary numbers.
 
 ## Package layout
 
@@ -51,7 +89,6 @@ test/runtests.jl                  correctness checks (F construction, Restricted
 ```bash
 julia --project=. experiments/ccce_infogain/exp1_alpha.jl      # α sweep: 100 trials, 100 noise runs each
 julia --project=. experiments/ccce_infogain/exp2_infogain.jl   # InfoGain: γ ∈ {1.1, 1.3, 1.7, 2.0}, 10 trials, 50 noise runs
-# add --quick to either for a few-minute smoke test (writes *_quick.mat)
 
 cd experiments/ccce_infogain/plot && matlab -batch PlotCCCEInfoGain
 ```
@@ -64,9 +101,8 @@ scripts regenerates them exactly: the solver is deterministic, so the logs match
 ## Reproducing the scalability experiments
 
 ```bash
-julia --project=. experiments/scalability/run_mc.jl          # Figs. 2-3: 6 values of n x 100 instances (~1-1.5 h)
-julia --project=. experiments/scalability/run_compact.jl     # compact LP on the same instances (~1 min)
-julia --project=. experiments/scalability/run_mc.jl --quick  # 10 instances, n = 3..6 (~30 s)
+julia --project=. experiments/scalability/run_mc.jl          # Figs. 2-3: 6 values of n x 100 instances
+julia --project=. experiments/scalability/run_compact.jl     # compact LP on the same instances
 
 cd experiments/scalability/plot && matlab -batch PlotScalability
 ```

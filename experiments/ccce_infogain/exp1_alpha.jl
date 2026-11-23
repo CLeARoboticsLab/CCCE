@@ -139,5 +139,5 @@ end
 # Paper setting:  julia --project=. experiments/ccce_infogain/exp1_alpha.jl
 # Quick check:    julia --project=. experiments/ccce_infogain/exp1_alpha.jl --quick
 if abspath(PROGRAM_FILE) == @__FILE__
-    "--quick" in ARGS ? run_exp1(n_trials = 5, noise_runs = 20, log_file = joinpath(RESULTS, "exp1_log_quick.txt"), mat_file = joinpath(RESULTS, "exp1_results_quick.mat")) : run_exp1(n_trials = 100, noise_runs = 100)
+    "--quick" in ARGS ? run_exp1(n_trials = 1, noise_runs = 20, log_file = joinpath(RESULTS, "exp1_log_quick.txt"), mat_file = joinpath(RESULTS, "exp1_results_quick.mat")) : run_exp1(n_trials = 100, noise_runs = 100)
 end
