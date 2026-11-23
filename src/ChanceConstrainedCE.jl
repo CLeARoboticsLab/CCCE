@@ -9,6 +9,8 @@ module ChanceConstrainedCE
 #               Full-CCCE over X, CC-PNE search + hull LPs (RR_X, RR_F) and the
 #               compact expected-allocation LP, solved with JuMP + Ipopt --
 #               used by the scalability experiments.
+#   general/    solve_ccce / solve_rr / find_ccpne for any finite game given
+#               as a cost array (JuMP LPs) -- the entry point for new users.
 #   mcp/        ParametricOptimizationProblem -> ParametricMCP -> PATH wrapper.
 # =============================================================================
 
@@ -24,6 +26,7 @@ using PATHSolver
 using JuMP
 import Ipopt
 import GLPK
+using Distributions: Normal, quantile
 
 function __init__()
     # PATH's free "courtesy" license, as published with PATHSolver.jl.
@@ -37,7 +40,12 @@ include("ccce/search_corr.jl")
 include("ccce/search_corr_lp.jl")
 include("exclusive/action_sets.jl")
 include("exclusive/exclusive_game.jl")
+include("general/solvers.jl")
 
+# General-purpose API (any finite game given as a cost array)
+export solve_ccce, solve_rr, find_ccpne, exclusive_support
+
+# Paper-specific solvers and helpers
 export ActionIndex, BuildCorrConstraintMap, BuildRunwayActionSet, CEKeyList, CalcEFJ,
        CalcH, CalcIndividualJ, CalcJ, CalcJNash, CalcJNashSet, CalcMarginalP, CalcPhi,
        CalcWeightedJ, CheckSetCCPNEHet, CompactLPHet, CorrPacker, EvalAverageDelay,

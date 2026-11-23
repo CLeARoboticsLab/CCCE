@@ -64,11 +64,55 @@ Key package versions are pinned in `Project.toml` (`[compat]`) to the versions u
 JuMP 1.29.4, Ipopt.jl 1.14.0 (Ipopt 3.14.19), PATHSolver.jl 1.7.9, ParametricMCPs.jl 0.1.17,
 Symbolics.jl 6.58.0. PATH is used under its free courtesy license, which is set in `src/ChanceConstrainedCE.jl`.
 
+## Using the solvers in your own game
+
+Describe a finite game by a cost array `costs[i, a_1, …, a_n]` (agent `i`'s cost at joint action
+`a`; agents minimize). Each agent's deviation costs carry Gaussian uncertainty with standard
+deviation `σ_i`, and incentive compatibility must hold with probability `α`.
+
+```julia
+using ChanceConstrainedCE
+
+# Game of chicken (actions: 1 = dare, 2 = yield)
+costs = zeros(2, 2, 2)
+costs[1, :, :] = [10 0; 7 2]
+costs[2, :, :] = [10 7; 0 2]
+
+res = solve_ccce(costs; alpha = 0.9, sigma = [1.0, 1.0])
+res.z                   # recommendation distribution over joint actions (2×2)
+res.expected_costs      # E_z[J_i] per agent
+res.constraints         # per incentive constraint (i, a_i, a_i'): slack, dual λ, π, infogain = σ λ π
+
+rr = solve_rr(costs; alpha = 0.9, sigma = 1.0)   # mixture of chance-constrained pure NE
+rr.ccpne                # the CC-PNEs found
+```
+
+| Function | What it solves |
+|---|---|
+| `solve_ccce(costs; alpha, sigma, objective, support)` | CC-CE linear program. With `support = S`, z is restricted to S (Restricted-CCCE). |
+| `find_ccpne(costs; alpha, sigma, support)` | Chance-constrained pure Nash equilibria in X or in S. |
+| `solve_rr(costs; alpha, sigma, objective, support)` | Best mixture of CC-PNEs: RR_X, or RR_S with `support = S` (RR_F with `S = F`). |
+| `exclusive_support(r, n)` | The exclusive-assignment set F for the occupy/yield resource game of the scalability paper. |
+
+Options:
+- `alpha` (or `zalpha = Φ⁻¹(α)`): omit both for the nominal correlated equilibrium.
+- `sigma`: a scalar or a per-agent vector.
+- `objective`: `:aggregate` (sum of expected costs, default), `:fair` (fairness threshold `Δ`),
+  `:minmax`, or an array `W` of system costs per joint action.
+- `sigma_scale`: `Dict((i, a_i, a_i′) => s)` scales one constraint's uncertainty, for example `s = 0`
+  to remove it after acquiring information.
+- `optimizer`: any JuMP LP solver (default GLPK).
+
+For a general candidate set S, RR_S is feasible for Restricted-CCCE on S but can be worse. The two
+coincide for exclusive resource-assignment games with S = F, as shown in the scalability paper.
+When the LP has several optimal solutions or multipliers, the solver returns one of them.
+
 ## Package layout
 
 ```
 src/
   ChanceConstrainedCE.jl          module definition and exports
+  general/solvers.jl              solve_ccce, find_ccpne, solve_rr, exclusive_support (any finite game)
   mcp/parametric_optimization_problem.jl
                                   optimization problem -> MCP (ParametricMCPs) -> PATH
   ccce/game_setup.jl              runway/queue game (SetC), CC-CE constraints (CalcH, CorrPacker),

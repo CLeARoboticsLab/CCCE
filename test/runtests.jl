@@ -1,6 +1,7 @@
 using ChanceConstrainedCE
 using Test
 using Statistics: mean
+using JuMP: MOI
 
 const GOOD = ("LOCALLY_SOLVED", "OPTIMAL")
 fair_obj(c, Δ) = sum(max(ci + Δ, maximum(c)) for ci in c) - length(c) * Δ
@@ -48,6 +49,69 @@ fair_obj(c, Δ) = sum(max(ci + Δ, maximum(c)) for ci in c) - length(c) * Δ
         @test_throws ErrorException HullLPHetOverF(r, n, c, Δ, W; sigma = sig, kw...)
         @test !(string(SearchCorrReducedLPHet(r, n, c, Δ, W; sigma = sig, kw...).status) in GOOD)
         @test !(string(CompactLPHet(r, n, c, Δ, ρ; sigma = sig, kw...).status) in GOOD)
+    end
+
+    @testset "general API: small game" begin
+        # chicken, as costs (1 = dare, 2 = yield)
+        g = zeros(2, 2, 2)
+        g[1, :, :] = [10 0; 7 2]
+        g[2, :, :] = [10 7; 0 2]
+        ce = solve_ccce(g)
+        @test ce.status == MOI.OPTIMAL
+        @test sum(ce.z) ≈ 1
+        @test ce.objective_value ≈ 40 / 7 atol = 1e-8          # best CE beats both pure NE (7)
+        @test Set(find_ccpne(g)) == Set([CartesianIndex(1, 2), CartesianIndex(2, 1)])
+        @test solve_rr(g).objective_value ≈ 7
+        cc = solve_ccce(g; alpha = 0.9, sigma = 1.0)
+        @test cc.objective_value > ce.objective_value          # robustness costs efficiency
+        @test all(c.dual >= -1e-9 for c in cc.constraints)
+        @test solve_rr(g; alpha = 0.999, sigma = 3.0).status == :NO_CCPNE
+        # infogain is the first-order value of the uncertainty (paper, Prop. 1):
+        # dJ*/dσ_i = q(α) Σ_{c ∈ C_i} λ_c π_c
+        h = 1e-6
+        up = solve_ccce(g; alpha = 0.9, sigma = [1.0 + h, 1.0])
+        fd = (up.objective_value - cc.objective_value) / h
+        pred = cc.zalpha * sum(c.dual * c.π for c in cc.constraints if c.agent == 1)
+        @test fd ≈ pred rtol = 1e-3
+    end
+
+    @testset "general API reproduces the paper solvers" begin
+        # CC-CE / InfoGain game (SetC), aggregate objective
+        r1, n1, γ1 = 2, 3, 2.0
+        Cg = SetC(r1, n1, ones(n1); mult = γ1)
+        m1 = 2^r1
+        costs1 = zeros(n1, ntuple(_ -> m1, n1)...)
+        for a in CartesianIndices(ntuple(_ -> m1, n1)), i in 1:n1
+            costs1[i, Tuple(a)...] = J_def(i, collect(Tuple(a)), Cg)
+        end
+        σ1 = [56.0, 7.0, 40.0]
+        old = SearchCorrLP(r1, n1, ones(n1), 1.0; zalpha = 1.2816, sigma = σ1, mult = γ1)
+        new = solve_ccce(costs1; zalpha = 1.2816, sigma = σ1)
+        @test new.objective_value ≈ old.score rtol = 1e-8
+
+        # scalability game (exclusive resource assignment), :fair objective
+        n2 = 4
+        ρ = [1.5, 4.0, 5.5, 2.5]
+        W = UniformAgentYieldWeights(ρ, r)
+        aset = BuildRunwayActionSet(r)
+        m2 = length(aset)
+        costs2 = zeros(n2, ntuple(_ -> m2, n2)...)
+        for a in CartesianIndices(ntuple(_ -> m2, n2)), i in 1:n2
+            costs2[i, Tuple(a)...] = VertiportCostHet(i, collect(Tuple(a)), aset, r, c, W; unit = 1.0)
+        end
+        F = exclusive_support(r, n2)
+        sig = fill(σ, n2)
+        gen = (zalpha = z, sigma = sig, objective = :fair, Δ = Δ)
+        red = SearchCorrReducedLPHet(r, n2, c, Δ, W; sigma = sig, kw...)
+        @test solve_ccce(costs2; support = F, gen...).objective_value ≈ fair_obj(red.cvals, Δ) rtol = 1e-5
+        rrf = HullLPHetOverF(r, n2, c, Δ, W; sigma = sig, kw...)
+        rrx = HullLPHetOverX(r, n2, c, Δ, W; sigma = sig, kw...)
+        gF = solve_rr(costs2; support = F, gen...)
+        gX = solve_rr(costs2; gen...)
+        @test length(gF.ccpne) == rrf.d
+        @test length(gX.ccpne) == rrx.d
+        @test gF.objective_value ≈ fair_obj(rrf.cvals, Δ) rtol = 1e-5
+        @test gX.objective_value ≈ fair_obj(rrx.cvals, Δ) rtol = 1e-5
     end
 
     @testset "general CC-CE search (PATH)" begin
