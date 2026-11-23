@@ -188,7 +188,7 @@ lg = legend(ax_l, [h_exp h_real h_dev], ...
 lg.Position(1) = lg.Position(1) - 0.06;
 lg.Position(2) = lg.Position(2) - 0.015;
 
-exportgraphics(fig1, fullfile(FIGDIR, 'fig_alpha_test.pdf'), 'Resolution', 300);
+exportgraphics(fig1, fullfile(FIGDIR, 'fig3_alpha_test.pdf'), 'Resolution', 300);
 
 % ── Figure 1b: same layout but with raw (unnormalized) cost values ────────────
 fig1b  = figure('Name', 'Exp1-Raw', 'Position', [50 50 900 550]);
@@ -253,7 +253,7 @@ lg1b = legend(ax_l1b, [h_exp_r h_real_r h_dev_r], ...
 % lg1b.Position(1) = lg1b.Position(1) - 0.06;
 lg1b.Position(2) = lg1b.Position(2) + 0.11;
 
-exportgraphics(fig1b, fullfile(FIGDIR, 'extra_alpha_test_raw.pdf'), 'Resolution', 300);
+% (raw variant not used in the paper)
 
 % =============================================================================
 %% EXPERIMENT 2 — InfoGain strategy comparison across γ values
@@ -456,7 +456,7 @@ lg = legend(ax3, h_gamma3, gamma_labels, ...
     'Location', 'southwest', 'FontName', 'Times New Roman', 'FontSize', 21, ...
     'Interpreter', 'tex');
 lg.Position(2) = lg.Position(2) + 0.1;
-exportgraphics(fig3, fullfile(FIGDIR, 'fig_infogain_test.pdf'), 'Resolution', 300);
+% (standardized-score variant not used in the paper)
 
 % =============================================================================
 %% EXPERIMENT 2 — Figure 4: Half strategies, baseline-only normalization
@@ -528,4 +528,4 @@ lg = legend(ax4, h_gamma4, gamma_labels, ...
     'Interpreter', 'tex');
 lg.Position(2) = lg.Position(2) + 0.1;
 grid on
-exportgraphics(fig4, fullfile(FIGDIR, 'extra_infogain_cost.pdf'), 'Resolution', 300);
+exportgraphics(fig4, fullfile(FIGDIR, 'fig4_infogain.pdf'), 'Resolution', 300);

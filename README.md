@@ -5,7 +5,7 @@ and data needed to reproduce the experiments of two papers:
 
 | Folder | Paper | Figures |
 |---|---|---|
-| `experiments/ccce_infogain/` | *Chance-Constrained Correlated Equilibria for Robust Noncooperative Coordination* (IEEE L-CSS, 2026) | α sweep (NaiveCE vs. CC-CE), InfoGain strategy comparison |
+| `experiments/ccce_infogain/` | *Chance-Constrained Correlated Equilibria for Robust Noncooperative Coordination* (IEEE L-CSS, 2026) | Fig. 3 (confidence level α), Fig. 4 (information acquisition) |
 | `experiments/scalability/` | *Scaling Chance-Constrained Correlated Equilibrium Computation for Exclusive Resource-Assignment Games* (arXiv:2609.13565) | Fig. 2 (computation time), Fig. 3 (average cost and Gini index) |
 
 ## Quick start
@@ -42,8 +42,8 @@ Measured on an Apple M4 Pro (12 cores, 24 GB). Times will differ on other machin
 |---|---|---|
 | `experiments/scalability/run_mc.jl` | ~30 s | ~1 h (dominated by Full-CCCE at n = 5 and RR_X at n = 8) |
 | `experiments/scalability/run_compact.jl` | ~15 s | ~2 min |
-| `experiments/ccce_infogain/exp1_alpha.jl` | ~3 min | several hours (700 PATH solves, ~20 s each) |
-| `experiments/ccce_infogain/exp2_infogain.jl` | ~7 min | ~3 h (200 PATH solves plus noise rollouts) |
+| `experiments/ccce_infogain/exp1_alpha.jl` | ~3 min | ~4 h (700 PATH solves, ~20 s each) |
+| `experiments/ccce_infogain/exp2_infogain.jl` | ~20 min | ~2-3 h (360 PATH solves) |
 
 The CC-CE / InfoGain experiments are slow because every PATH solve rebuilds and compiles the
 symbolic MCP. This affects only wall-clock time, not results. The data behind the published figures
@@ -87,16 +87,22 @@ test/runtests.jl                  correctness checks (F construction, Restricted
 ## Reproducing the CC-CE / InfoGain experiments
 
 ```bash
-julia --project=. experiments/ccce_infogain/exp1_alpha.jl      # α sweep: 100 trials, 100 noise runs each
-julia --project=. experiments/ccce_infogain/exp2_infogain.jl   # InfoGain: γ ∈ {1.1, 1.3, 1.7, 2.0}, 10 trials, 50 noise runs
+julia --project=. experiments/ccce_infogain/exp1_alpha.jl      # Fig. 3: γ = 2, α ∈ {0 (Naive-CE), 0.66, …, 0.999}, 100 trials, 100 noise samples
+julia --project=. experiments/ccce_infogain/exp2_infogain.jl   # Fig. 4: α = 0.9, γ ∈ {1.3, 1.5, 1.8, 2.0}, 10 trials, 10 noise samples
 
 cd experiments/ccce_infogain/plot && matlab -batch PlotCCCEInfoGain
 ```
 
 Outputs go to `experiments/ccce_infogain/results/` and figures to `experiments/ccce_infogain/figures/`:
-`fig_alpha_test.pdf` (α sweep) and `fig_infogain_test.pdf` (InfoGain strategies). Both runs use a fixed
-seed (42). The `.mat` files and logs in `results/` are the data behind the published figures. Running the
-scripts regenerates them exactly: the solver is deterministic, so the logs match line by line.
+`fig3_alpha_test.pdf` and `fig4_infogain.pdf`. The scripts use exactly the setting of the paper:
+n = 3 agents, 2 vertiports (4 actions per agent), seed 42, and the CC-CE problem solved as an MCP with
+PATH (`SearchCorr`). The `.mat` files and logs in `results/` are the data behind the published figures.
+
+The package also provides `SearchCorrLP`, which solves the same CC-CE problem as a linear program
+(JuMP + GLPK) in milliseconds instead of ~20 s. It reaches the same optimal value. The LP can have
+several optimal solutions and dual multipliers, though, so the recommendation distribution, realized
+costs and dual-based (InfoGain) rankings can differ from PATH's. The experiment scripts therefore use
+PATH, as in the paper.
 
 ## Reproducing the scalability experiments
 

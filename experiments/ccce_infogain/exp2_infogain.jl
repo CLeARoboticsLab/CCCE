@@ -25,13 +25,16 @@ include("exp_utils.jl")        # simulate_realized, system_cost, evaluate_soluti
 
 const RESULTS = joinpath(@__DIR__, "results")
 
+# CC-CE solver used in the paper: MCP formulation solved with PATH.
+const SOLVE = SearchCorr
+
 # ── Experiment parameters ────────────────────────────────────────────────────
 const E2_R      = 2
 const E2_N      = 3
 const E2_LAMBDA = ones(E2_N)
 const E2_DELTA  = 1.0
 const E2_ALPHA  = 0.9
-const E2_GAMMAS = [1.1, 1.3, 1.7, 2.0]   # values used in the paper figure
+const E2_GAMMAS = [1.3, 1.5, 1.8, 2.0]   # values used in the paper (Fig. 4)
 const E2_K           = 5    # number of constraints to de-noise per strategy
 const E2_SCALE_FULL  = 0.0  # full uncertainty removal
 const E2_SCALE_HALF  = 0.5  # partial uncertainty removal
@@ -72,7 +75,7 @@ function run_exp2(;
                         join([@sprintf("%.4f", s) for s in sigma], ", ")))
 
             # ── Baseline CC-CE solve ─────────────────────────────────────────
-            res0 = SearchCorr(E2_R, E2_N, E2_LAMBDA, E2_DELTA;
+            res0 = SOLVE(E2_R, E2_N, E2_LAMBDA, E2_DELTA;
                               zalpha = zalpha,
                               sigma  = sigma,
                               mult   = γ)
@@ -103,7 +106,7 @@ function run_exp2(;
             for (name, scale_keys) in strategies
 
                 res = isempty(scale_keys) ? res0 :
-                      SearchCorr(E2_R, E2_N, E2_LAMBDA, E2_DELTA;
+                      SOLVE(E2_R, E2_N, E2_LAMBDA, E2_DELTA;
                                  zalpha           = zalpha,
                                  sigma            = sigma,
                                  mult             = γ,
@@ -161,7 +164,11 @@ end
 
 # ── Entry point ──────────────────────────────────────────────────────────────
 # Paper setting:  julia --project=. experiments/ccce_infogain/exp2_infogain.jl
-# Quick check:    julia --project=. experiments/ccce_infogain/exp2_infogain.jl --quick
+# Smoke test:     julia --project=. experiments/ccce_infogain/exp2_infogain.jl --quick
+#                 (same code and setting, fewer trials; writes *_quick files)
 if abspath(PROGRAM_FILE) == @__FILE__
-    "--quick" in ARGS ? run_exp2(n_trials = 1, noise_runs = 10, log_file = joinpath(RESULTS, "exp2_log_quick.txt"), mat_file = joinpath(RESULTS, "exp2_results_quick.mat")) : run_exp2(n_trials = 10, noise_runs = 50)
+    tag = "--quick" in ARGS ? "_quick" : ""
+    cfg = "--quick" in ARGS ? (; n_trials = 1, noise_runs = 10) : (; n_trials = 10, noise_runs = 10)
+    run_exp2(; cfg..., log_file = joinpath(RESULTS, "exp2_log$tag.txt"),
+                mat_file = joinpath(RESULTS, "exp2_results$tag.mat"))
 end

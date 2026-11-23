@@ -56,5 +56,11 @@ fair_obj(c, Δ) = sum(max(ci + Δ, maximum(c)) for ci in c) - length(c) * Δ
         @test string(res.status) == "MCP_Solved"
         @test sum(x) ≈ 1 atol = 1e-6
         @test all(x .>= -1e-8)
+
+        # LP formulation of the same problem reaches the same optimal value
+        lp = SearchCorrLP(1, 2, ones(2), 1.0; zalpha = 1.2816, sigma = [0.3, 0.3])
+        @test string(lp.status) == "OPTIMAL"
+        @test CalcJ(lp.primals[1:lp.l], lp.C, lp.m, lp.n) ≈ CalcJ(x, res.C, res.m, res.n) rtol = 1e-6
+        @test length(lp.mu_ineq) == length(res.mu_ineq)
     end
 end

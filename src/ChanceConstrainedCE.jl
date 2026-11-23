@@ -23,6 +23,7 @@ using ParametricMCPs: ParametricMCPs, ParametricMCP
 using PATHSolver
 using JuMP
 import Ipopt
+import GLPK
 
 function __init__()
     # PATH's free "courtesy" license, as published with PATHSolver.jl.
@@ -33,6 +34,7 @@ end
 include("mcp/parametric_optimization_problem.jl")
 include("ccce/game_setup.jl")
 include("ccce/search_corr.jl")
+include("ccce/search_corr_lp.jl")
 include("exclusive/action_sets.jl")
 include("exclusive/exclusive_game.jl")
 
@@ -44,7 +46,7 @@ export ActionIndex, BuildCorrConstraintMap, BuildRunwayActionSet, CEKeyList, Cal
        GetCEConstraintInfo, HetYieldWeights, HullLPHetOverF, HullLPHetOverX,
        IsCCPNEProfileHet, J_def, NashPacker, NumCorrEqConstraints,
        NumCorrIneqConstraints, NumCorrPrimalVars, NvVector, OccupancyVec,
-       ParametricOptimizationProblem, PrintCEList, RandomKCE, SearchCorr,
+       ParametricOptimizationProblem, PrintCEList, RandomKCE, SearchCorr, SearchCorrLP,
        SearchCorrLPHet, SearchCorrReducedLPHet, SetC, SmoothMax, SplitCorrSolution,
        SwitchIndtoJoint, T1Const, T1ConstN, T2Const, T2ConstN, T3Const,
        TopKActiveCEByMu, TopKCEByMu, TopKCEByMuPSigma, TopKCEByMuSigma, TopKCEBySigma,

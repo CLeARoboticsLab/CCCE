@@ -15,6 +15,9 @@ include("exp_utils.jl")        # simulate_realized, system_cost, evaluate_soluti
 
 const RESULTS = joinpath(@__DIR__, "results")
 
+# CC-CE solver used in the paper: MCP formulation solved with PATH.
+const SOLVE = SearchCorr
+
 # ── Experiment parameters ────────────────────────────────────────────────────
 const E1_R      = 2            # r=1 → m = 2^1 = 2 actions per agent
 const E1_N      = 3
@@ -60,7 +63,7 @@ function run_exp1(;
             label  = α == 0.0 ? "NaiveCE     " : @sprintf("CC-CE(α=%.2f)", α)
             zalpha = alpha_to_z(α)
 
-            res = SearchCorr(E1_R, E1_N, E1_LAMBDA, E1_DELTA;
+            res = SOLVE(E1_R, E1_N, E1_LAMBDA, E1_DELTA;
                              zalpha = zalpha,
                              sigma  = sigma,
                              mult   = E1_GAMMA)
@@ -137,7 +140,11 @@ end
 
 # ── Entry point ──────────────────────────────────────────────────────────────
 # Paper setting:  julia --project=. experiments/ccce_infogain/exp1_alpha.jl
-# Quick check:    julia --project=. experiments/ccce_infogain/exp1_alpha.jl --quick
+# Smoke test:     julia --project=. experiments/ccce_infogain/exp1_alpha.jl --quick
+#                 (same code and setting, fewer trials; writes *_quick files)
 if abspath(PROGRAM_FILE) == @__FILE__
-    "--quick" in ARGS ? run_exp1(n_trials = 1, noise_runs = 20, log_file = joinpath(RESULTS, "exp1_log_quick.txt"), mat_file = joinpath(RESULTS, "exp1_results_quick.mat")) : run_exp1(n_trials = 100, noise_runs = 100)
+    tag = "--quick" in ARGS ? "_quick" : ""
+    cfg = "--quick" in ARGS ? (; n_trials = 1, noise_runs = 20) : (; n_trials = 100, noise_runs = 100)
+    run_exp1(; cfg..., log_file = joinpath(RESULTS, "exp1_log$tag.txt"),
+                mat_file = joinpath(RESULTS, "exp1_results$tag.mat"))
 end
