@@ -5,8 +5,8 @@ and data needed to reproduce the experiments of two papers:
 
 | Folder | Paper | Figures |
 |---|---|---|
-| `experiments/ccce_infogain/` | CC-CE with information-gain–guided uncertainty reduction | α sweep (NaiveCE vs. CC-CE), InfoGain strategy comparison |
-| `experiments/scalability/` | *Scaling Chance-Constrained Correlated Equilibrium Computation for Exclusive Resource-Assignment Games* | Fig. 2 (computation time), Fig. 3 (average cost and Gini index) |
+| `experiments/ccce_infogain/` | *Chance-Constrained Correlated Equilibria for Robust Noncooperative Coordination* (IEEE L-CSS, 2026) | α sweep (NaiveCE vs. CC-CE), InfoGain strategy comparison |
+| `experiments/scalability/` | *Scaling Chance-Constrained Correlated Equilibrium Computation for Exclusive Resource-Assignment Games* (arXiv:2609.13565) | Fig. 2 (computation time), Fig. 3 (average cost and Gini index) |
 
 ## Quick start
 
@@ -140,3 +140,25 @@ Absolute times will differ on other machines. The relative ordering of the metho
 ## Citation
 
 If you use this code, please cite the corresponding paper(s).
+
+```bibtex
+@article{im2026chance,
+  author  = {Im, Jaehan and Topcu, Ufuk and Fridovich-Keil, David},
+  title   = {Chance-Constrained Correlated Equilibria for Robust Noncooperative Coordination},
+  journal = {IEEE Control Systems Letters},
+  volume  = {10},
+  pages   = {1273--1278},
+  year    = {2026},
+  doi     = {10.1109/LCSYS.2026.3705300}
+}
+
+@misc{im2026scaling,
+  author        = {Im, Jaehan and Topcu, Ufuk and Fridovich-Keil, David},
+  title         = {Scaling Chance-Constrained Correlated Equilibrium Computation for Exclusive Resource-Assignment Games},
+  year          = {2026},
+  eprint        = {2609.13565},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.GT},
+  url           = {https://arxiv.org/abs/2609.13565}
+}
+```
